@@ -1,0 +1,39 @@
+name: Create S3 Bucket
+
+on:
+  pull_request:
+    types:
+      - closed
+
+jobs:
+  create-s3:
+    if: github.event.pull_request.merged == true
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ap-south-1
+
+      - name: Verify AWS Access
+        run: aws sts get-caller-identity
+
+      - name: Create S3 Bucket
+        run: |
+          aws s3api create-bucket \
+            --bucket mlops-discussions-forum-bucket-12345 \
+            --region ap-south-1 \
+            --create-bucket-configuration LocationConstraint=ap-south-1
+
+      - name: List Buckets
+        run: aws s3 ls
